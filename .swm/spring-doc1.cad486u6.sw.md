@@ -5,7 +5,7 @@ title: Spring-doc1
 
 ---
 
-Spring boot application run class
+Main method class in spring-boot APP
 
 ```java
 @SpringBootApplication

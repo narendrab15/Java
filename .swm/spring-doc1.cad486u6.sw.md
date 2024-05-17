@@ -1,5 +1,5 @@
 ---
-title: Devcon demo
+title: Spring-doc1
 ---
 <SwmSnippet path="/javaAlgorithms/src/main/java/com/javaApp/javaAlgorithms/JavaAlgorithmsApplication.java" line="6">
 

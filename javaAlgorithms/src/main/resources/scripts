@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Directory containing repositories
+repos_dir="/path/to/repos"
+
+# Check if the directory exists
+if [ ! -d "$repos_dir" ]; then
+    echo "Directory $repos_dir does not exist."
+    exit 1
+fi
+
+# Navigate to the repositories directory
+cd "$repos_dir" || exit
+
+# Iterate over each directory in the repositories directory
+for repo in */; do
+    # Navigate into the repository directory
+    cd "$repo" || continue
+
+    # Check if it's a Git repository
+    if [ -d ".git" ]; then
+        echo "Updating $repo ..."
+        # Pull changes from the remote repository
+        git pull
+        echo "---------------------------------------"
+    else
+        echo "$repo is not a Git repository."
+    fi
+
+    # Move back to the repositories directory
+    cd ..
+done
+
+echo "All repositories have been updated."

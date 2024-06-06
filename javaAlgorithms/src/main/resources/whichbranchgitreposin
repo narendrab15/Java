@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Navigate to the directory containing the repositories
+cd "/path/to/repos" || exit
+
+# Iterate over each subdirectory
+for repo in */; do
+    # Print the repository name
+    echo "Repository: $repo"
+
+    # Navigate into the repository directory
+    cd "$repo" || continue
+
+    # Check if it's a Git repository
+    if [ -d ".git" ]; then
+        # Fetch latest information from the remote repository
+        git fetch --prune
+        # List all branches
+        git branch -a
+    else
+        echo "Not a Git repository."
+    fi
+
+    # Move back to the parent directory
+    cd ..
+    echo "---------------------------------------"
+done

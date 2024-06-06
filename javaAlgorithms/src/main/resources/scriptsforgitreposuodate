@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Iterate over each subdirectory
+for repo in */; do
+    # Navigate into the repository directory
+    cd "$repo" || continue
+
+    # Check if it's a Git repository
+    if [ -d ".git" ]; then
+        echo "Updating $repo ..."
+        # Pull changes from the remote repository
+        git pull
+        echo "---------------------------------------"
+    else
+        echo "$repo is not a Git repository."
+    fi
+
+    # Move back to the parent directory
+    cd ..
+done
+
+echo "All repositories have been updated."

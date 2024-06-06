@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Directory containing repositories
+repos_dir="/path/to/repos"
+
+# Check if the directory exists
+if [ ! -d "$repos_dir" ]; then
+    echo "Directory $repos_dir does not exist."
+    exit 1
+fi
+
+# Navigate to the repositories directory
+cd "$repos_dir" || exit
+
+# Iterate over each directory in the repositories directory
+for repo in */; do
+    # Navigate into the repository directory
+    cd "$repo" || continue
+
+    # Check if it's a directory
+    if [ -d ".git" ]; then
+        echo "Building $repo ..."
+        # Execute the build command
+        # Replace the build command with the actual command you use to build the repository
+        # For example, if you use npm to build, you might use: npm install && npm run build
+        # If you use make, you might use: make
+        # Adjust the command according to your project's build process
+        # Example command: npm install && npm run build
+        npm install && npm run build
+        echo "---------------------------------------"
+    else
+        echo "$repo is not a Git repository."
+    fi
+
+    # Move back to the parent directory
+    cd ..
+done
+
+echo "All repositories have been built."

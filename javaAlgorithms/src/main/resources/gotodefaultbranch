@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Set the directory containing all the repositories
+REPOS_DIR="/path/to/your/repos"
+
+# Navigate to the directory containing the repositories
+cd "$REPOS_DIR" || exit
+
+# Loop through each directory in the REPOS_DIR
+for repo in */; do
+    # Check if it's a directory
+    if [ -d "$repo" ]; then
+        echo "Processing repository: $repo"
+        cd "$repo" || continue
+
+        # Fetch the latest changes
+        git fetch --all
+
+        # Determine the default branch
+        DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+
+        # Checkout the default branch
+        if [ -n "$DEFAULT_BRANCH" ]; then
+            git checkout "$DEFAULT_BRANCH"
+            git pull origin "$DEFAULT_BRANCH"
+        else
+            echo "Could not determine default branch for $repo"
+        fi
+
+        # Go back to the parent directory
+        cd ..
+    fi
+done

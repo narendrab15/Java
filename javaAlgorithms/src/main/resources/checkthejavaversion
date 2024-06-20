@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Function to check and extract Java version from pom.xml
+check_pom_xml() {
+    if [[ -f "pom.xml" ]]; then
+        JAVA_VERSION=$(grep -oPm1 "(?<=<maven.compiler.source>)[^<]+" pom.xml)
+        if [[ -z "$JAVA_VERSION" ]]; then
+            JAVA_VERSION=$(grep -oPm1 "(?<=<java.version>)[^<]+" pom.xml)
+        fi
+        if [[ -n "$JAVA_VERSION" ]]; then
+            echo "Java version found in $1/pom.xml: $JAVA_VERSION"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Function to check and extract Java version from Jenkinsfile
+check_jenkinsfile() {
+    if [[ -f "Jenkinsfile" ]]; then
+        JAVA_VERSION=$(grep -oPm1 "(?<=jdk')[^']+" Jenkinsfile)
+        if [[ -n "$JAVA_VERSION" ]]; then
+            echo "Java version found in $1/Jenkinsfile: $JAVA_VERSION"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Function to process a directory containing a git repository
+process_repo_dir() {
+    REPO_DIR=$1
+
+    if [[ ! -d "$REPO_DIR" ]]; then
+        echo "Directory does not exist: $REPO_DIR"
+        return 1
+    fi
+
+    cd "$REPO_DIR" || return 1
+
+    # Check for Java version in pom.xml and Jenkinsfile
+    if ! check_pom_xml "$REPO_DIR"; then
+        if ! check_jenkinsfile "$REPO_DIR"; then
+            echo "Java version not found in repository: $REPO_DIR"
+        fi
+    fi
+
+    cd - &> /dev/null
+}
+
+# Check if at least one argument is provided
+if [[ $# -lt 1 ]]; then
+    echo "Usage: $0 <repo_directory> [<repo_directory> ...]"
+    exit 1
+fi
+
+# Process each repository directory provided as argument
+for REPO_DIR in "$@"; then
+    process_repo_dir "$REPO_DIR"
+done

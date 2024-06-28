@@ -1,0 +1,21 @@
+name: Pull Package from Artifactory and Run
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Pull Package and Run
+      uses: ./.github/actions/my-action
+      with:
+        artifactory-username: ${{ secrets.ARTIFACTORY_USERNAME }}
+        artifactory-password: ${{ secrets.ARTIFACTORY_PASSWORD }}

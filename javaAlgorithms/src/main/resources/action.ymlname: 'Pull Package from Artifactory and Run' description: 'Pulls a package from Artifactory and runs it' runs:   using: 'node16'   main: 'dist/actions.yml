@@ -1,0 +1,12 @@
+name: 'Pull Package from Artifactory and Run'
+description: 'Pulls a package from Artifactory and runs it'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
+inputs:
+  artifactory-username:
+    description: 'Artifactory Username'
+    required: true
+  artifactory-password:
+    description: 'Artifactory Password or API key'
+    required: true

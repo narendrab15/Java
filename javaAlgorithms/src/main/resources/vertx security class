@@ -1,0 +1,33 @@
+If Vert.x Core internally uses javax.security.cert.X509Certificate[] (which was common in JDK 8) and you’re now upgrading to JDK 17, this can lead to compatibility issues due to the stricter module encapsulation enforced in newer Java versions.
+
+Background and Challenges:
+
+	•	Java Encapsulation Changes in JDK 9+: Java 9 introduced the module system, which began enforcing stronger access restrictions to internal and deprecated packages, including javax.security.cert.
+	•	JDK 17 Encapsulation: Java 17 enforces even stricter encapsulation (via JEP 403), preventing code from accessing javax.security.cert unless specific modules are opened. The recommended type is now java.security.cert.X509Certificate.
+
+Steps to Address the Issue:
+
+	1.	Add --add-opens JVM Option:
+To temporarily allow access to javax.security.cert while running on JDK 17, add this JVM option to open up access:
+
+--add-opens java.base/javax.security.cert=ALL-UNNAMED
+
+This workaround may be suitable while you migrate code, but it’s not a long-term solution.
+
+	2.	Update Vert.x Core:
+	•	Check for Updated Vert.x Version: Ensure you’re using the latest Vert.x Core version compatible with JDK 17. Vert.x Core has been actively maintained, and newer versions may have addressed this dependency internally to use java.security.cert.X509Certificate instead.
+	•	File an Issue if Necessary: If javax.security.cert.X509Certificate is still used in the latest version of Vert.x Core, you may need to file a bug or enhancement request with the Vert.x project to migrate to java.security.cert.
+	3.	Custom Wrapper or Converter:
+If you control the source where certificates are processed, consider creating a wrapper or utility that converts javax.security.cert.X509Certificate to java.security.cert.X509Certificate for more compatibility:
+
+java.security.cert.X509Certificate[] javaCerts = Arrays.stream(javaxCerts)
+    .map(cert -> (java.security.cert.X509Certificate) cert)
+    .toArray(java.security.cert.X509Certificate[]::new);
+
+
+	4.	Consider Jakarta EE Compatibility:
+If you’re also using Jakarta EE dependencies, ensure they align with java.security.cert standards rather than javax.security.cert for future compatibility.
+
+Summary:
+
+Updating Vert.x Core and configuring the JVM with --add-opens should help in the short term. However, transitioning fully to java.security.cert.X509Certificate is recommended for long-term compatibility with JDK 17 and beyond.

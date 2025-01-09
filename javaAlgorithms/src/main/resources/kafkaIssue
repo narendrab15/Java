@@ -1,0 +1,91 @@
+The error:
+
+org.apache.kafka.common.utils.AppInfoParser Error registering AppInfo MBean
+
+is commonly observed when running a Kafka client application in an environment where JMX MBeans (Java Management Extensions) registration fails. This error is typically non-fatal, meaning your application should continue running, but it can indicate a configuration issue or an environment-specific limitation.
+
+1. Cause of the Error
+
+This error occurs when Kafka tries to register an MBean (used for monitoring and management purposes) and fails due to one of the following reasons:
+
+a. Duplicate Registration
+	•	If multiple instances of the Kafka client run in the same JVM or share the same client.id (e.g., producer or consumer configurations), it may result in duplicate MBean registrations.
+
+b. Restricted Environment
+	•	Some environments (e.g., containers, serverless platforms) may restrict JMX or MBean registration.
+
+c. Missing JMX Configurations
+	•	The JVM’s JMX subsystem might not be properly configured or active.
+
+d. JDK Compatibility Issues
+	•	While JDK 17 is supported, some older Kafka versions or misconfigurations may lead to issues with reflection or JMX in Kafka utilities.
+
+2. Steps to Resolve
+
+a. Set Unique client.id
+
+Ensure each Kafka client instance has a unique client.id. This avoids conflicts during MBean registration.
+
+In your Kafka producer/consumer configuration:
+
+Properties props = new Properties();
+props.put("client.id", "unique-client-id");
+
+b. Disable JMX MBean Registration
+
+If you don’t require Kafka MBeans for monitoring, you can disable their registration by setting:
+
+metrics.recording.level=NONE
+
+or, in some cases, disabling JMX:
+
+jmx.reporter.enabled=false
+
+c. Run in a JMX-Compatible Environment
+
+Ensure your JVM has JMX enabled:
+	•	Add the following JVM options:
+
+-Dcom.sun.management.jmxremote
+-Djava.rmi.server.hostname=127.0.0.1
+-Dcom.sun.management.jmxremote.port=9999
+-Dcom.sun.management.jmxremote.ssl=false
+-Dcom.sun.management.jmxremote.authenticate=false
+
+3. Debugging the Issue
+
+To better understand why the error occurs, enable DEBUG logging for Kafka:
+
+log4j.logger.org.apache.kafka=DEBUG
+
+Look for logs related to AppInfoParser and MBean registration. This will provide more context.
+
+4. Example Kafka Client Configuration
+
+Here’s an example Kafka client setup with a unique client.id and disabled JMX if needed:
+
+Properties kafkaProps = new Properties();
+kafkaProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+kafkaProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+kafkaProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+kafkaProps.put("client.id", "unique-client-id"); // Ensure this is unique
+kafkaProps.put("jmx.reporter.enabled", "false"); // Disable JMX if not needed
+
+KafkaProducer<String, String> producer = new KafkaProducer<>(kafkaProps);
+
+5. Why This Happens with JDK 17
+
+While JDK 17 is supported, stricter module encapsulation or environmental constraints (e.g., in containers) may exacerbate MBean registration issues. If disabling JMX or ensuring unique client.id doesn’t resolve the issue, consider these additional steps:
+	•	Ensure Kafka 3.4.0 is running with proper configuration for JDK 17.
+	•	Use JVM options like:
+
+--add-opens java.base/java.lang=ALL-UNNAMED
+
+6. Conclusion
+
+This error is typically non-fatal and can be mitigated by:
+	1.	Ensuring unique client.id values.
+	2.	Disabling JMX MBean registration if not required.
+	3.	Running in a properly configured JMX environment.
+
+If the error persists or impacts functionality, share additional logs for deeper debugging. Let me know if you need help with specific configurations or logs!

@@ -1,0 +1,47 @@
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Recipe;
+import org.openrewrite.TreeVisitor;
+import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.java.tree.J;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class ConvertOldSwitchToNewSwitch extends Recipe {
+    @Override
+    public String getDisplayName() {
+        return "Convert Old Switch to Java 17 Enhanced Switch";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Refactors traditional switch statements into Java 17 enhanced switch expressions.";
+    }
+
+    @Override
+    protected TreeVisitor<?, ExecutionContext> getVisitor() {
+        return new JavaIsoVisitor<ExecutionContext>() {
+            @Override
+            public J.Switch visitSwitch(J.Switch switchStatement, ExecutionContext ctx) {
+                List<J.Case> cases = switchStatement.getCases().getStatements();
+
+                boolean canConvert = cases.stream().allMatch(c -> 
+                    c.getStatements().size() == 2 && c.getStatements().get(1) instanceof J.Break
+                );
+
+                if (canConvert) {
+                    String newSwitchExpression = "return switch (" + switchStatement.getSelector().print() + ") {\n";
+                    newSwitchExpression += cases.stream()
+                        .map(c -> c.getExpressions().get(0).print() + " -> " + c.getStatements().get(0).print() + ";")
+                        .collect(Collectors.joining("\n"));
+                    newSwitchExpression += "\n};";
+
+                    return (J.Switch) switchStatement.withTemplate(
+                        template(newSwitchExpression), switchStatement.getCoordinates().replace()
+                    );
+                }
+
+                return super.visitSwitch(switchStatement, ctx);
+            }
+        };
+    }
+}

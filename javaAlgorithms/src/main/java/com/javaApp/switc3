@@ -1,0 +1,67 @@
+package com.example;
+
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Recipe;
+import org.openrewrite.TreeVisitor;
+import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.Space;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class SwitchToSwitchExpression extends Recipe {
+    @Override
+    public String getDisplayName() {
+        return "Convert switch statements to switch expressions";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Refactors traditional switch statements into modern switch expressions using Java 14+ syntax.";
+    }
+
+    @Override
+    public TreeVisitor<?, ExecutionContext> getVisitor() {
+        return new JavaIsoVisitor<ExecutionContext>() {
+            @Override
+            public J.Switch visitSwitch(J.Switch switchStmt, ExecutionContext ctx) {
+                // Ensure the switch statement is assignable (returns a value)
+                if (!(getCursor().getParentOrThrow().getValue() instanceof J.Assignment ||
+                      getCursor().getParentOrThrow().getValue() instanceof J.Return)) {
+                    return super.visitSwitch(switchStmt, ctx);
+                }
+
+                // Convert case blocks to arrow-style expressions
+                List<J.Case> updatedCases = switchStmt.getCases().getStatements().stream()
+                        .map(caseStmt -> {
+                            if (caseStmt instanceof J.Case) {
+                                J.Case caseBlock = (J.Case) caseStmt;
+                                List<J.Statement> statements = caseBlock.getBody().getStatements();
+                                if (statements.size() == 1 && statements.get(0) instanceof J.Return) {
+                                    J.Return returnStmt = (J.Return) statements.get(0);
+                                    return caseBlock.withBody(
+                                            caseBlock.getBody().withStatements(
+                                                    List.of(
+                                                            new J.Return(
+                                                                    caseBlock.getPrefix(),
+                                                                    returnStmt.getExpression(),
+                                                                    returnStmt.getMarkers()
+                                                            )
+                                                    )
+                                            )
+                                    );
+                                }
+                            }
+                            return caseStmt;
+                        })
+                        .collect(Collectors.toList());
+
+                // Create a new switch expression with arrow syntax
+                return switchStmt.withCases(
+                        switchStmt.getCases().withStatements(updatedCases)
+                ).withPrefix(Space.EMPTY);
+            }
+        };
+    }
+}

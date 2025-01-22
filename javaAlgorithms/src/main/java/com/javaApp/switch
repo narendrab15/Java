@@ -1,0 +1,55 @@
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Recipe;
+import org.openrewrite.TreeVisitor;
+import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.java.tree.J;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class ConvertOldSwitchToNewSwitch extends Recipe {
+    @Override
+    public String getDisplayName() {
+        return "Convert Old Switch to Java 17 Enhanced Switch";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Refactors traditional switch statements into Java 17 enhanced switch expressions without JavaTemplate.";
+    }
+
+    @Override
+    protected TreeVisitor<?, ExecutionContext> getVisitor() {
+        return new JavaIsoVisitor<ExecutionContext>() {
+            @Override
+            public J visitSwitch(J.Switch switchStatement, ExecutionContext ctx) {
+                // Extract case statements safely
+                List<J.Case> cases = switchStatement.getCases().getStatements().stream()
+                    .filter(stmt -> stmt instanceof J.Case)
+                    .map(stmt -> (J.Case) stmt)
+                    .collect(Collectors.toList());
+
+                // Check if the switch can be converted
+                boolean canConvert = cases.stream().allMatch(c ->
+                    c.getStatements().size() == 2 &&
+                    c.getStatements().get(1) instanceof J.Break
+                );
+
+                if (canConvert) {
+                    // Build a new switch expression using AST node creation
+                    J.SwitchExpression newSwitchExpression = new J.SwitchExpression(
+                        switchStatement.getId(),
+                        switchStatement.getPrefix(),
+                        switchStatement.getMarkers(),
+                        switchStatement.getSelector(),
+                        switchStatement.getCases()
+                    );
+
+                    return newSwitchExpression; // ✅ Replace old switch with new expression
+                }
+
+                return super.visitSwitch(switchStatement, ctx);
+            }
+        };
+    }
+}

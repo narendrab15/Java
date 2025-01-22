@@ -1,0 +1,44 @@
+import org.junit.jupiter.api.Test;
+import org.openrewrite.java.JavaParser;
+import org.openrewrite.java.JavaRecipeTest;
+import org.openrewrite.test.RewriteTest;
+import org.openrewrite.test.RewriteTestRunner;
+import org.openrewrite.test.SourceSpecs;
+
+import static org.openrewrite.java.Assertions.java;
+
+class ConvertSwitchToSwitchExpressionTest implements RewriteTest {
+
+    @Test
+    void convertOldSwitchToNewSwitch() {
+        rewriteRun(
+            spec -> spec.recipe(new ConvertSwitchToSwitchExpression()), // ✅ Apply the recipe
+            java(
+                """
+                public class TestClass {
+                    public String getDayName(int day) {
+                        String result;
+                        switch (day) {
+                            case 1: result = "Monday"; break;
+                            case 2: result = "Tuesday"; break;
+                            default: result = "Invalid"; break;
+                        }
+                        return result;
+                    }
+                }
+                """,
+                """
+                public class TestClass {
+                    public String getDayName(int day) {
+                        return switch (day) {
+                            case 1 -> "Monday";
+                            case 2 -> "Tuesday";
+                            default -> "Invalid";
+                        };
+                    }
+                }
+                """
+            )
+        );
+    }
+}

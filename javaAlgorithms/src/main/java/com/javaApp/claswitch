@@ -1,0 +1,122 @@
+package org.example.refactoring;
+
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Recipe;
+import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.Statement;
+import org.openrewrite.java.tree.TypeUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ModernizeSwitchStatementsRecipe extends Recipe {
+    @Override
+    public String getDisplayName() {
+        return "Modernize Switch Statements";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Convert traditional switch-case statements to modern switch expressions with yield and arrow syntax.";
+    }
+
+    @Override
+    public JavaIsoVisitor<ExecutionContext> getVisitor() {
+        return new JavaIsoVisitor<ExecutionContext>() {
+            @Override
+            public J.Switch visitSwitch(J.Switch switchStatement, ExecutionContext ctx) {
+                J.Switch originalSwitch = super.visitSwitch(switchStatement, ctx);
+                
+                // Only convert switches that can be safely transformed
+                if (canConvertToModernSwitch(originalSwitch)) {
+                    return convertToModernSwitch(originalSwitch);
+                }
+                
+                return originalSwitch;
+            }
+
+            private boolean canConvertToModernSwitch(J.Switch switchStatement) {
+                // Check if switch can be safely converted
+                boolean hasReturnOrYield = false;
+                boolean hasBreakWithoutLabel = false;
+                
+                for (Statement caseStmt : switchStatement.getCases()) {
+                    if (caseStmt instanceof J.Case) {
+                        J.Case caseStatement = (J.Case) caseStmt;
+                        
+                        // Check for return or yield statements
+                        hasReturnOrYield |= hasReturnOrYieldStatement(caseStatement);
+                        
+                        // Check for break statements
+                        hasBreakWithoutLabel |= hasBreakStatement(caseStatement);
+                    }
+                }
+                
+                // Only convert if we can safely use yield or arrow syntax
+                return hasReturnOrYield || !hasBreakWithoutLabel;
+            }
+
+            private boolean hasReturnOrYieldStatement(J.Case caseStatement) {
+                return caseStatement.getStatements().stream()
+                    .anyMatch(stmt -> 
+                        stmt instanceof J.Return || 
+                        (stmt instanceof J.Switch.Case && 
+                         ((J.Switch.Case) stmt).getBody() instanceof J.Yield)
+                    );
+            }
+
+            private boolean hasBreakStatement(J.Case caseStatement) {
+                return caseStatement.getStatements().stream()
+                    .anyMatch(stmt -> 
+                        stmt instanceof J.Break && 
+                        ((J.Break) stmt).getLabel() == null
+                    );
+            }
+
+            private J.Switch convertToModernSwitch(J.Switch originalSwitch) {
+                // Transform switch statement to use modern syntax
+                List<Statement> modernCases = new ArrayList<>();
+                
+                for (Statement caseStmt : originalSwitch.getCases()) {
+                    if (caseStmt instanceof J.Case) {
+                        J.Case caseStatement = (J.Case) caseStmt;
+                        
+                        // Transform case statements
+                        J.Case modernCase = transformCase(caseStatement);
+                        modernCases.add(modernCase);
+                    }
+                }
+                
+                // Create a new switch statement with modern cases
+                return originalSwitch.withCases(modernCases);
+            }
+
+            private J.Case transformCase(J.Case originalCase) {
+                // Determine if we should use yield or arrow syntax
+                List<Statement> statements = originalCase.getStatements();
+                
+                // If case has a single return or yield, use arrow syntax
+                if (statements.size() == 1) {
+                    Statement singleStatement = statements.get(0);
+                    
+                    if (singleStatement instanceof J.Return) {
+                        // Transform to arrow syntax with return value
+                        J.Return returnStmt = (J.Return) singleStatement;
+                        return originalCase.withStatements(List.of(
+                            new J.Switch.Case(
+                                returnStmt.getPrefix(), 
+                                returnStmt.getMarkers(), 
+                                returnStmt.getExpression(), 
+                                returnStmt.getCoordinates()
+                            )
+                        ));
+                    }
+                }
+                
+                // For more complex cases, use yield
+                return originalCase;
+            }
+        };
+    }
+}

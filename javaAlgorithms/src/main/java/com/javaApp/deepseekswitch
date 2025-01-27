@@ -1,0 +1,59 @@
+package com.yourorg;
+
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Recipe;
+import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.Statement;
+import org.openrewrite.java.tree.Switch;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class SwitchToArrowRecipe extends Recipe {
+
+    @Override
+    public String getDisplayName() {
+        return "Convert traditional switch to arrow syntax";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Refactors colon-style switch cases to use Java 14+ arrow syntax.";
+    }
+
+    @Override
+    public JavaIsoVisitor<ExecutionContext> getVisitor() {
+        return new JavaIsoVisitor<ExecutionContext>() {
+            @Override
+            public J.Switch visitSwitch(J.Switch switchStmt, ExecutionContext ctx) {
+                J.Switch s = super.visitSwitch(switchStmt, ctx);
+
+                // Only modify traditional switch statements (not expressions)
+                if (s.getCases().stream().anyMatch(c -> c.getType() == Switch.Case.Type.Statement)) {
+                    List<Switch.Case> newCases = new ArrayList<>();
+                    for (Switch.Case caseStmt : s.getCases()) {
+                        if (caseStmt.getType() == Switch.Case.Type.Statement) {
+                            // Convert colon `:` to arrow `->`
+                            Switch.Case newCase = caseStmt.withType(Switch.Case.Type.Rule);
+                            // Remove redundant `break` statements in arrow syntax
+                            List<Statement> statementsWithoutBreak = new ArrayList<>();
+                            for (Statement statement : caseStmt.getStatements()) {
+                                if (!(statement instanceof J.Break)) {
+                                    statementsWithoutBreak.add(statement);
+                                }
+                            }
+                            newCase = newCase.withStatements(statementsWithoutBreak);
+                            newCases.add(newCase);
+                        } else {
+                            newCases.add(caseStmt);
+                        }
+                    }
+                    s = s.withCases(newCases);
+                }
+
+                return s;
+            }
+        };
+    }
+}

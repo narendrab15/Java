@@ -1,0 +1,20 @@
+function gh-switch() {
+    if [ "$1" == "work" ]; then
+        export GH_HOST="github.yourcompany.com"
+        export GH_TOKEN=$(cat ~/.config/gh/token_work)
+        git config --global user.name "Your Work Name"
+        git config --global user.email "your-work-email@yourcompany.com"
+    elif [ "$1" == "personal" ]; then
+        export GH_HOST="github.yourcompany.com"
+        export GH_TOKEN=$(cat ~/.config/gh/token_personal)
+        git config --global user.name "Your Personal Name"
+        git config --global user.email "your-personal-email@yourcompany.com"
+    else
+        echo "Usage: gh-switch [work|personal]"
+        return 1
+    fi
+
+    echo "Switched to GitHub account: $1"
+    echo "Current Host: $GH_HOST"
+    gh auth status --hostname $GH_HOST
+}

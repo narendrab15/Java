@@ -1,0 +1,15 @@
+function gh-switch() {
+    if [ "$1" == "work" ]; then
+        export GH_TOKEN=$(cat ~/.config/gh/token_work)
+        git config --global user.name "Your Work Name"
+        git config --global user.email "your-work-email@example.com"
+    elif [ "$1" == "personal" ]; then
+        export GH_TOKEN=$(cat ~/.config/gh/token_personal)
+        git config --global user.name "Your Personal Name"
+        git config --global user.email "your-personal-email@example.com"
+    else
+        echo "Usage: gh-switch [work|personal]"
+        return 1
+    fi
+    echo "Switched to GitHub account: $1"
+}

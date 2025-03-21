@@ -1,0 +1,5 @@
+For Tomcat 8.x: Java 8 is mandatory.
+For Tomcat 9.x: Java 8 and Java 11 are recommended, but Java 17 and 21 are not supported.
+For Tomcat 10.x: Java 8, 11, 17, and 21 are all recommended.
+For WildFly 24.x and below: Java 8 and 11 are recommended, but Java 17 and 21 are not supported.
+For WildFly 25.x and above: Java 8, 11, 17, and 21 are recommended.

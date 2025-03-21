@@ -3,3 +3,19 @@ For Tomcat 9.x: Java 8 and Java 11 are recommended, but Java 17 and 21 are not s
 For Tomcat 10.x: Java 8, 11, 17, and 21 are all recommended.
 For WildFly 24.x and below: Java 8 and 11 are recommended, but Java 17 and 21 are not supported.
 For WildFly 25.x and above: Java 8, 11, 17, and 21 are recommended.
+
+
+
+WildFly 23.x and later:
+Java 17 is supported starting with WildFly 23.x (2021). WildFly 23 and later versions are compatible with Java 17 and also support Jakarta EE 9.x.
+WildFly 24.x and later:
+WildFly 24.x and beyond also support Java 17 and include optimizations and features for Jakarta EE 9.x/9.1, microservices, and cloud-native deployment.
+WildFly 25.x and later:
+WildFly 25.x continues to support Java 17 and provides even better integration with modern cloud-native architectures and Jakarta EE 9.x+.
+
+
+
+WildFly 26.x and later:
+Java 21 support will likely start from WildFly 26.x or later. While WildFly 25.x and earlier will not support Java 21 directly, upcoming WildFly versions after 25 will most likely incorporate compatibility for Java 21.
+WildFly 25.x (released in 2022):
+As of now, WildFly 25.x might not officially support Java 21, but future releases like WildFly 26.x will include support for Java 21 as it becomes more widely adopted in enterprise environments.

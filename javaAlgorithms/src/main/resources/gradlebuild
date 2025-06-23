@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Input and Output CSV files
+input_csv="input.csv"
+output_csv="output.csv"
+
+# Create the output CSV file and add the header
+echo "repo_name,jdk_version,build_status" > "$output_csv"
+
+# JDK paths (adjust to actual locations on your system)
+JDK_PATHS=(
+  [6]="/path/to/jdk6"
+  [7]="/path/to/jdk7"
+  [8]="/path/to/jdk8"
+  [11]="/path/to/jdk11"
+  [17]="/path/to/jdk17"
+  [21]="/path/to/jdk21"
+)
+
+# Read the input CSV file line by line
+while IFS=',' read -r repo jdk_version
+do
+  # Skip the header row
+  if [ "$repo" != "repo_name" ]; then
+    echo "Processing $repo with JDK $jdk_version..."
+
+    # Check if the JDK version is valid and set JAVA_HOME
+    if [[ -z "${JDK_PATHS[$jdk_version]}" ]]; then
+      echo "Unsupported JDK version $jdk_version for $repo, skipping..."
+      echo "$repo,$jdk_version,Failed (Unsupported JDK version)" >> "$output_csv"
+      continue
+    fi
+
+    # Set the JDK for this repository
+    export JAVA_HOME="${JDK_PATHS[$jdk_version]}"
+
+    # Check if the JDK is set correctly
+    if [ ! -d "$JAVA_HOME" ]; then
+      echo "JDK $jdk_version is not found, skipping $repo"
+      echo "$repo,$jdk_version,Failed (JDK not found)" >> "$output_csv"
+      continue
+    fi
+
+    # Print the active JAVA_HOME and JDK version
+    echo "Using JDK $jdk_version located at $JAVA_HOME"
+    java -version
+
+    # Change to the repository directory and run the Gradle build
+    cd "$repo" || { echo "Repository $repo not found, skipping..."; continue; }
+
+    # Run the Gradle build
+    ./gradlew clean build
+
+    # Check if the build was successful
+    if [ $? -eq 0 ]; then
+      echo "$repo,$jdk_version,Success" >> "../$output_csv"
+    else
+      echo "$repo,$jdk_version,Failed" >> "../$output_csv"
+    fi
+
+    # Move back to the parent directory
+    cd ..
+
+  fi
+done < "$input_csv"
+
+echo "Build process complete. Check the output in $output_csv"
